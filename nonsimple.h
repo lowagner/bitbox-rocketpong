@@ -13,6 +13,7 @@ void clear_screen();
 
 extern uint8_t superpixel[Ny+2][Nx+2];
 extern int graph_debug;
+extern uint8_t graph_not_ready;
 extern int wind_y, wind_x;
 
 extern void_fn* graph_line_callback;

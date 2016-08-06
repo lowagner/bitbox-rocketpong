@@ -11,6 +11,7 @@ uint8_t super_row_0[Nx+2] CCM_MEMORY;
 uint8_t super_row_1[Nx+2] CCM_MEMORY;
 uint8_t super_row_2[Nx+2] CCM_MEMORY;
 uint8_t *super_above, *super_row, *super_below;
+uint8_t graph_not_ready;
 
 int wind_y, wind_x;
 
@@ -20,6 +21,8 @@ int graph_debug;
 
 void graph_frame() 
 {
+    if (graph_not_ready)
+        return;
     super_above = super_row_0;
     super_row = super_row_1;
     super_below = super_row_2;
@@ -34,34 +37,28 @@ void graph_frame()
 
 void graph_line() 
 {
-    if (vga_odd)
+    if (vga_odd || graph_not_ready)
         return;
     
-    int j = vga_line/4+1;
-    if (vga_line % 4 < 2) 
-    {
+    if (vga_line % 4 < 2) {
         uint32_t *dst = (uint32_t *)draw_buffer;
-        for (int i=1; i<=Nx; ++i) 
-        {
+        for (int i=1; i<=Nx; ++i) {
             uint32_t color = palette[super_row[i]];
             color |= color<<16;
             *dst++ = color;
             *dst++ = color;
         }
     } 
-    else if (vga_line % 4 == 2)
-    {
+    else if (vga_line % 4 == 2) {
         // keep superpixel row fixed, work off of that to determine what 
         // super row should be.
-        if (graph_line_callback) 
-        {
+        if (graph_line_callback) {
             graph_line_callback();
         }
     }
-    else
-    {
-        if (j < Ny) 
-        {
+    else {
+        int j = vga_line/4+1;
+        if (j < Ny) {
             // move around the row pointers to avoid copying all rows again:
             uint8_t *intermediate = super_above;
             super_above = super_row;
@@ -423,7 +420,7 @@ void propagate() {
                 // rocket
             }
 
-            if (explosion > 2) {
+            if (explosion > 1) {
                 if (super_row[i]/2 == 144/2) {
                     // indestructible wall, only explode rockets
                     if (explosion >= 300)
@@ -435,13 +432,12 @@ void propagate() {
                             superpixel[j][i+1] = 143;
                         }
                     }
-
                 } 
                 else {
-                    if (explosion/4 > 15)
+                    if (explosion/2 > 15)
                         superpixel[j][i] = 143;
                     else {
-                        superpixel[j][i] = 128 + explosion/4;
+                        superpixel[j][i] = 128 + explosion/2;
                     }
                 }
             }
